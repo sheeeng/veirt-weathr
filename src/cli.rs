@@ -1,4 +1,5 @@
 use clap::Parser;
+use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap_complete::Shell;
 
 use crate::weather::WeatherCondition;
@@ -19,42 +20,13 @@ const ABOUT: &str = concat!(
     "Data \u{00a9} OpenStreetMap contributors, ODbL (https://www.openstreetmap.org/copyright)"
 );
 
-const CONDITION_GROUPS: &[(&str, &[(&str, &str)])] = &[
-    (
-        "Clear Skies",
-        &[
-            ("clear", "Clear sunny sky"),
-            ("partly-cloudy", "Partial cloud coverage"),
-            ("cloudy", "Cloudy sky"),
-            ("overcast", "Overcast sky"),
-        ],
-    ),
-    (
-        "Precipitation",
-        &[
-            ("fog", "Foggy conditions"),
-            ("drizzle", "Light drizzle"),
-            ("rain", "Rain"),
-            ("freezing-rain", "Freezing rain"),
-            ("rain-showers", "Rain showers"),
-        ],
-    ),
-    (
-        "Snow",
-        &[
-            ("snow", "Snow"),
-            ("snow-grains", "Snow grains"),
-            ("snow-showers", "Snow showers"),
-        ],
-    ),
-    (
-        "Storms",
-        &[
-            ("thunderstorm", "Thunderstorm"),
-            ("thunderstorm-hail", "Thunderstorm with hail"),
-        ],
-    ),
-];
+fn simulate_parser() -> PossibleValuesParser {
+    PossibleValuesParser::new(
+        WeatherCondition::ALL
+            .iter()
+            .map(|c| PossibleValue::new(c.as_str()).help(c.description())),
+    )
+}
 
 #[derive(Parser)]
 #[command(version, long_version = LONG_VERSION, about = ABOUT, long_about = None)]
@@ -63,6 +35,7 @@ pub struct Cli {
         short,
         long,
         value_name = "CONDITION",
+        value_parser = simulate_parser(),
         help = "Simulate weather condition (clear, rain, drizzle, snow, etc.)"
     )]
     pub simulate: Option<String>,
@@ -107,10 +80,6 @@ pub struct Cli {
     pub completions: Option<Shell>,
 }
 
-pub enum SimulateError {
-    UnknownCondition(String),
-}
-
 pub fn extract_simulate_missing_value(err: clap::Error) -> clap::Error {
     let msg = err.to_string();
     if msg.contains("--simulate") && msg.contains("value is required") {
@@ -120,24 +89,24 @@ pub fn extract_simulate_missing_value(err: clap::Error) -> clap::Error {
     }
 }
 
-pub fn validate_simulate(cli: &Cli) -> Result<(), SimulateError> {
-    if let Some(condition) = &cli.simulate {
-        condition
-            .parse::<WeatherCondition>()
-            .map_err(|_| SimulateError::UnknownCondition(condition.clone()))?;
-    }
-    Ok(())
-}
-
 pub fn print_simulate_help() {
+    let mut current_group = "";
+
     eprintln!("Available weather conditions:");
-    for (group, conditions) in CONDITION_GROUPS {
-        eprintln!();
-        eprintln!("  {}:", group);
-        for (name, description) in *conditions {
-            eprintln!("    {:<18} - {}", name, description);
+    for condition in WeatherCondition::ALL {
+        let group = condition.group();
+        if group != current_group {
+            eprintln!();
+            eprintln!("  {}:", group);
+            current_group = group;
         }
+        eprintln!(
+            "    {:<18} - {}",
+            condition.as_str(),
+            condition.description()
+        );
     }
+
     eprintln!();
     eprintln!("Examples:");
     eprintln!("  weathr --simulate rain");

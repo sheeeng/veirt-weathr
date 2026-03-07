@@ -42,6 +42,72 @@ pub enum FogIntensity {
 }
 
 impl WeatherCondition {
+    pub const ALL: &'static [WeatherCondition] = &[
+        Self::Clear,
+        Self::PartlyCloudy,
+        Self::Cloudy,
+        Self::Overcast,
+        Self::Fog,
+        Self::Drizzle,
+        Self::Rain,
+        Self::FreezingRain,
+        Self::RainShowers,
+        Self::Snow,
+        Self::SnowGrains,
+        Self::SnowShowers,
+        Self::Thunderstorm,
+        Self::ThunderstormHail,
+    ];
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Clear => "clear",
+            Self::PartlyCloudy => "partly-cloudy",
+            Self::Cloudy => "cloudy",
+            Self::Overcast => "overcast",
+            Self::Fog => "fog",
+            Self::Drizzle => "drizzle",
+            Self::Rain => "rain",
+            Self::FreezingRain => "freezing-rain",
+            Self::RainShowers => "rain-showers",
+            Self::Snow => "snow",
+            Self::SnowGrains => "snow-grains",
+            Self::SnowShowers => "snow-showers",
+            Self::Thunderstorm => "thunderstorm",
+            Self::ThunderstormHail => "thunderstorm-hail",
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            Self::Clear => "Clear sunny sky",
+            Self::PartlyCloudy => "Partial cloud coverage",
+            Self::Cloudy => "Cloudy sky",
+            Self::Overcast => "Overcast sky",
+            Self::Fog => "Foggy conditions",
+            Self::Drizzle => "Light drizzle",
+            Self::Rain => "Rain",
+            Self::FreezingRain => "Freezing rain",
+            Self::RainShowers => "Rain showers",
+            Self::Snow => "Snow",
+            Self::SnowGrains => "Snow grains",
+            Self::SnowShowers => "Snow showers",
+            Self::Thunderstorm => "Thunderstorm",
+            Self::ThunderstormHail => "Thunderstorm with hail",
+        }
+    }
+
+    pub fn group(&self) -> &'static str {
+        match self {
+            Self::Clear | Self::PartlyCloudy | Self::Cloudy | Self::Overcast => "Clear Skies",
+            Self::Fog | Self::Drizzle | Self::Rain | Self::FreezingRain | Self::RainShowers => {
+                "Precipitation"
+            }
+            Self::Snow | Self::SnowGrains | Self::SnowShowers => "Snow",
+            Self::Thunderstorm | Self::ThunderstormHail => "Storms",
+        }
+    }
+
     pub fn rain_intensity(&self) -> RainIntensity {
         match self {
             Self::Drizzle => RainIntensity::Drizzle,
@@ -102,26 +168,12 @@ impl std::str::FromStr for WeatherCondition {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "clear" => Ok(Self::Clear),
-            "partly_cloudy" | "partly-cloudy" => Ok(Self::PartlyCloudy),
-            "cloudy" => Ok(Self::Cloudy),
-            "overcast" => Ok(Self::Overcast),
-            "fog" => Ok(Self::Fog),
-            "drizzle" => Ok(Self::Drizzle),
-            "rain" => Ok(Self::Rain),
-            "freezing_rain" | "freezing-rain" => Ok(Self::FreezingRain),
-            "snow" => Ok(Self::Snow),
-            "snow_grains" | "snow-grains" => Ok(Self::SnowGrains),
-            "rain_showers" | "rain-showers" => Ok(Self::RainShowers),
-            "snow_showers" | "snow-showers" => Ok(Self::SnowShowers),
-            "thunderstorm" => Ok(Self::Thunderstorm),
-            "thunderstorm_hail" | "thunderstorm-hail" => Ok(Self::ThunderstormHail),
-            _ => Err(format!(
-                "Unknown weather condition: '{}'. Valid options: clear, partly_cloudy, cloudy, overcast, fog, drizzle, rain, freezing_rain, snow, snow_grains, rain_showers, snow_showers, thunderstorm, thunderstorm_hail",
-                s
-            )),
-        }
+        let normalized = s.to_lowercase().replace('_', "-");
+        Self::ALL
+            .iter()
+            .find(|c| c.as_str() == normalized)
+            .copied()
+            .ok_or_else(|| format!("Unknown weather condition: '{}'", s))
     }
 }
 

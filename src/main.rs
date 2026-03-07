@@ -13,7 +13,7 @@ mod weather;
 
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
-use cli::{Cli, SimulateError};
+use cli::Cli;
 use config::Config;
 use crossterm::{
     cursor, execute,
@@ -48,13 +48,6 @@ async fn main() -> io::Result<()> {
             std::process::exit(1);
         }
     };
-
-    if let Err(SimulateError::UnknownCondition(condition)) = cli::validate_simulate(&cli) {
-        eprintln!("error: unknown weather condition '{}'", condition);
-        eprintln!();
-        cli::print_simulate_help();
-        std::process::exit(1);
-    }
 
     if let Some(shell) = cli.completions {
         let mut cmd = Cli::command();
